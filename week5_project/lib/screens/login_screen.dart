@@ -12,20 +12,19 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controllers for text fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   // Loading state for button
   bool _isLoading = false;
-  
+
   // Firebase Auth instance
   final _auth = FirebaseAuth.instance;
 
   @override
   void dispose() {
-    // IMPORTANT: Always dispose controllers to prevent memory leaks
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -36,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (value == null || value.isEmpty) {
       return 'Email is required';
     }
-    // Simple regex for email format
+
     final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     if (!emailRegex.hasMatch(value)) {
       return 'Enter a valid email address';
@@ -57,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Login function
   Future<void> _signIn() async {
-    // Validate form first
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -67,17 +65,13 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Attempt sign in with Firebase
       await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Success! AuthWrapper will automatically redirect to dashboard
-      
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase errors [citation:1]
       String errorMessage;
-      
+
       if (e.code == 'user-not-found') {
         errorMessage = 'No user found with this email.';
       } else if (e.code == 'wrong-password') {
@@ -87,19 +81,15 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         errorMessage = 'Login failed: ${e.message}';
       }
-      
-      // Show error to user
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
-      
     } catch (e) {
-      // Handle any other errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred: ${e.toString()}')),
       );
     } finally {
-      // Always stop loading indicator
       setState(() {
         _isLoading = false;
       });
@@ -112,6 +102,8 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('Sign In'),
         centerTitle: true,
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -130,10 +122,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: _validateEmail,
-                enabled: !_isLoading, // Disable while loading
+                enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
-              
+
               // Password field
               TextFormField(
                 controller: _passwordController,
@@ -142,27 +134,37 @@ class _LoginScreenState extends State<LoginScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.lock),
                 ),
-                obscureText: true, // Hide password
+                obscureText: true,
                 validator: _validatePassword,
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 24),
-              
+
               // Sign In button
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _signIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Sign In', style: TextStyle(fontSize: 16)),
+                      : const Text(
+                          'Sign In',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Link to Sign Up
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                ),
                 onPressed: _isLoading
                     ? null
                     : () {

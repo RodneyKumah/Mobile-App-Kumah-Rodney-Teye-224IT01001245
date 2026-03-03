@@ -49,17 +49,13 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create new user with Firebase [citation:1]
       await _auth.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      
-      // Success! AuthWrapper will redirect to dashboard
-      
     } on FirebaseAuthException catch (e) {
       String errorMessage;
-      
+
       if (e.code == 'email-already-in-use') {
         errorMessage = 'This email is already registered.';
       } else if (e.code == 'weak-password') {
@@ -69,11 +65,10 @@ class _SignupScreenState extends State<SignupScreen> {
       } else {
         errorMessage = 'Registration failed: ${e.message}';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
-      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred: ${e.toString()}')),
@@ -86,7 +81,11 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
+      appBar: AppBar(
+        title: const Text('Create Account'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -105,7 +104,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
-              
+
               TextFormField(
                 controller: _passwordController,
                 decoration: const InputDecoration(
@@ -118,7 +117,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 16),
-              
+
               TextFormField(
                 controller: _confirmPasswordController,
                 decoration: const InputDecoration(
@@ -131,20 +130,30 @@ class _SignupScreenState extends State<SignupScreen> {
                 enabled: !_isLoading,
               ),
               const SizedBox(height: 24),
-              
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _signUp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Sign Up', style: TextStyle(fontSize: 16)),
+                      : const Text(
+                          'Sign Up',
+                          style: TextStyle(fontSize: 16),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                ),
                 onPressed: _isLoading ? null : () => Navigator.pop(context),
                 child: const Text('Already have an account? Sign In'),
               ),

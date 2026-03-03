@@ -152,7 +152,7 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Colors.blue),
+            Icon(icon, size: 40, color: const Color.fromARGB(255, 27, 3, 238)),
             const SizedBox(height: 8),
             Text(label),
           ],
