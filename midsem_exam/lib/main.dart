@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// 1. Update this import to point to your Login Screen file
+
 import 'screens/login_screen.dart'; 
 
 void main() {
