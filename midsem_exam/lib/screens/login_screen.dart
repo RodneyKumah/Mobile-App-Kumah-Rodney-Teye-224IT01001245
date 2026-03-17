@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'profile_screen.dart';
+// 1. Ensure this import matches your file structure
+import 'profile_screen.dart'; 
 
 class LoginScreen extends StatelessWidget {
   final TextEditingController emailController = TextEditingController();
@@ -8,9 +9,7 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Login"),
-      ),
+      appBar: AppBar(title: Text("Login")),
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -24,7 +23,6 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16),
-
             TextField(
               controller: passwordController,
               obscureText: true,
@@ -34,17 +32,9 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
-
             ElevatedButton(
               onPressed: () {
-                String email = emailController.text;
-                String password = passwordController.text;
-
-                // ✅ Print credentials (EXAM REQUIREMENT)
-                print("Email: $email");
-                print("Password: $password");
-
-                // Navigate to Profile
+                
                 Navigator.push(
                   context,
                   MaterialPageRoute(

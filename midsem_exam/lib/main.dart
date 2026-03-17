@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/profile_screen.dart';
+// 1. Update this import to point to your Login Screen file
+import 'screens/login_screen.dart'; 
 
 void main() {
   runApp(MyApp());
@@ -11,7 +12,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Student Task App',
       debugShowCheckedModeBanner: false,
-      home: ProfileScreen(), 
+      
+      home: LoginScreen(), 
     );
   }
 }
