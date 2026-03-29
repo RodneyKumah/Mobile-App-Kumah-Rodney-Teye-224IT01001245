@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'product_list_screen.dart';
+import '../database/database_helper.dart';
 import '../utils/app_theme.dart';
+import '../utils/validators.dart';
+import '../utils/constants.dart';
+import 'product_list_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,15 +17,28 @@ class _LoginScreenState extends State<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  // TODO: Replace with real auth logic (database lookup)
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      // Placeholder: accept any non-empty credentials for now
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _isLoading = true; _errorMessage = null; });
+
+    final user = await DatabaseHelper.instance.login(
+      _usernameController.text,
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (user != null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const ProductListScreen()),
       );
+    } else {
+      setState(() => _errorMessage = 'Incorrect username or password.');
     }
   }
 
@@ -50,27 +66,45 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Logo / Title
                     const Icon(Icons.inventory_2_outlined, size: 64, color: AppTheme.primary),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Inventory Manager',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
+                    const Text(AppConstants.appName,
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 28),
 
-                    // Username field
+                    // Error banner
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(_errorMessage!,
+                                style: const TextStyle(color: AppTheme.danger))),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Username
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(
                         labelText: 'Username',
                         prefixIcon: Icon(Icons.person_outline),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Enter username' : null,
+                      validator: (v) => Validators.required(v, 'Username'),
                     ),
                     const SizedBox(height: 16),
 
-                    // Password field
+                    // Password
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -79,10 +113,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () =>
+                              setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty) ? 'Enter password' : null,
+                      validator: (v) => Validators.required(v, 'Password'),
                     ),
                     const SizedBox(height: 24),
 
@@ -90,13 +125,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _handleLogin,
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 4),
-                          child: Text('Login', style: TextStyle(fontSize: 16)),
-                        ),
+                        onPressed: _isLoading ? null : _handleLogin,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2))
+                            : const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 4),
+                                child: Text('Login', style: TextStyle(fontSize: 16)),
+                              ),
                       ),
                     ),
+
+                    const SizedBox(height: 12),
+                    Text('Default: admin / admin123',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                   ],
                 ),
               ),

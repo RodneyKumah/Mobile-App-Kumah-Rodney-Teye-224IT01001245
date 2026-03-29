@@ -2,6 +2,8 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/product.dart';
 import '../models/stock_transaction.dart';
+import '../models/user.dart';
+import '../utils/constants.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -18,16 +20,18 @@ class DatabaseHelper {
   Future<Database> _initDB(String fileName) async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, fileName);
-
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+    return await openDatabase(path, version: 1, onCreate: _createDB);
   }
 
   Future _createDB(Database db, int version) async {
-    // Products table
+    await db.execute('''
+      CREATE TABLE users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL
+      )
+    ''');
+
     await db.execute('''
       CREATE TABLE products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +43,6 @@ class DatabaseHelper {
       )
     ''');
 
-    // Stock transactions table
     await db.execute('''
       CREATE TABLE stock_transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,9 +54,28 @@ class DatabaseHelper {
         FOREIGN KEY (product_id) REFERENCES products(id)
       )
     ''');
+
+    // Seed default admin user
+    await db.insert('users', {
+      'username': AppConstants.defaultUsername,
+      'password': AppConstants.defaultPassword,
+    });
   }
 
-  // ── Product CRUD ──────────────────────────────────────────────
+  //  Auth 
+
+  Future<User?> login(String username, String password) async {
+    final db = await database;
+    final maps = await db.query(
+      'users',
+      where: 'username = ? AND password = ?',
+      whereArgs: [username.trim(), password.trim()],
+    );
+    if (maps.isEmpty) return null;
+    return User.fromMap(maps.first);
+  }
+
+  // Product CRUD 
 
   Future<int> insertProduct(Product product) async {
     final db = await database;
@@ -62,18 +84,14 @@ class DatabaseHelper {
 
   Future<List<Product>> getAllProducts() async {
     final db = await database;
-    final maps = await db.query('products');
+    final maps = await db.query('products', orderBy: 'name ASC');
     return maps.map((m) => Product.fromMap(m)).toList();
   }
 
   Future<int> updateProduct(Product product) async {
     final db = await database;
-    return await db.update(
-      'products',
-      product.toMap(),
-      where: 'id = ?',
-      whereArgs: [product.id],
-    );
+    return await db.update('products', product.toMap(),
+        where: 'id = ?', whereArgs: [product.id]);
   }
 
   Future<int> deleteProduct(int id) async {
@@ -81,51 +99,55 @@ class DatabaseHelper {
     return await db.delete('products', where: 'id = ?', whereArgs: [id]);
   }
 
-  // ── Stock Transaction Logic ───────────────────────────────────
+  //  Stock Logic
 
   Future<void> recordStockIn(int productId, int quantity, String note) async {
     final db = await database;
-
     // New Quantity = Current Quantity + Added Quantity
     await db.rawUpdate(
-      'UPDATE products SET quantity = quantity + ? WHERE id = ?',
-      [quantity, productId],
-    );
-
-    await db.insert('stock_transactions', StockTransaction(
-      productId: productId,
-      type: 'IN',
-      quantity: quantity,
-      date: DateTime.now().toIso8601String(),
-      note: note,
-    ).toMap());
+        'UPDATE products SET quantity = quantity + ? WHERE id = ?',
+        [quantity, productId]);
+    await db.insert(
+        'stock_transactions',
+        StockTransaction(
+          productId: productId,
+          type: 'IN',
+          quantity: quantity,
+          date: DateTime.now().toIso8601String(),
+          note: note,
+        ).toMap());
   }
 
   Future<bool> recordStockOut(int productId, int quantity, String note) async {
     final db = await database;
-
-    // Validate: prevent stock going below zero
-    final result = await db.query('products', where: 'id = ?', whereArgs: [productId]);
+    final result =
+        await db.query('products', where: 'id = ?', whereArgs: [productId]);
     if (result.isEmpty) return false;
-
     final current = result.first['quantity'] as int;
-    if (current < quantity) return false; // Not enough stock
-
-    // New Quantity = Current Quantity – Issued Quantity
+    if (current < quantity) return false;
+    // New Quantity = Current Quantity - Issued Quantity
     await db.rawUpdate(
-      'UPDATE products SET quantity = quantity - ? WHERE id = ?',
-      [quantity, productId],
-    );
-
-    await db.insert('stock_transactions', StockTransaction(
-      productId: productId,
-      type: 'OUT',
-      quantity: quantity,
-      date: DateTime.now().toIso8601String(),
-      note: note,
-    ).toMap());
-
+        'UPDATE products SET quantity = quantity - ? WHERE id = ?',
+        [quantity, productId]);
+    await db.insert(
+        'stock_transactions',
+        StockTransaction(
+          productId: productId,
+          type: 'OUT',
+          quantity: quantity,
+          date: DateTime.now().toIso8601String(),
+          note: note,
+        ).toMap());
     return true;
+  }
+
+  Future<List<StockTransaction>> getTransactionsForProduct(int productId) async {
+    final db = await database;
+    final maps = await db.query('stock_transactions',
+        where: 'product_id = ?',
+        whereArgs: [productId],
+        orderBy: 'date DESC');
+    return maps.map((m) => StockTransaction.fromMap(m)).toList();
   }
 
   Future<void> close() async {

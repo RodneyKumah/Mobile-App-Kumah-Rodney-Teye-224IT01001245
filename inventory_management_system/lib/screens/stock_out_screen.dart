@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 import '../models/product.dart';
 import '../utils/app_theme.dart';
+import '../utils/validators.dart';
+import '../widgets/confirm_dialog.dart';
 
 class StockOutScreen extends StatefulWidget {
   final Product product;
@@ -15,13 +17,22 @@ class _StockOutScreenState extends State<StockOutScreen> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
   final _noteController     = TextEditingController();
+  bool _isSaving = false;
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
     final qty = int.parse(_quantityController.text.trim());
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Confirm Stock Out',
+      message: 'Issue $qty unit(s) of "${widget.product.name}"?',
+      confirmLabel: 'Issue',
+      confirmColor: AppTheme.danger,
+    );
+    if (!confirmed) return;
 
-    // New Quantity = Current Quantity – Issued Quantity
+    setState(() => _isSaving = true);
     final success = await DatabaseHelper.instance.recordStockOut(
       widget.product.id!,
       qty,
@@ -29,22 +40,19 @@ class _StockOutScreenState extends State<StockOutScreen> {
     );
 
     if (!mounted) return;
+    setState(() => _isSaving = false);
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('-$qty units issued from ${widget.product.name}'),
-          backgroundColor: AppTheme.danger,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('-$qty units issued from ${widget.product.name}'),
+        backgroundColor: AppTheme.danger,
+      ));
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Not enough stock to issue that quantity.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Not enough stock to issue that quantity.'),
+        backgroundColor: Colors.orange,
+      ));
     }
   }
 
@@ -59,19 +67,17 @@ class _StockOutScreenState extends State<StockOutScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product info card
               Card(
                 color: Colors.red.shade50,
                 child: ListTile(
                   leading: const Icon(Icons.outbox, color: AppTheme.danger),
                   title: Text(widget.product.name,
                       style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Current Stock: ${widget.product.quantity}'),
+                  subtitle: Text('Current Stock: ${widget.product.quantity} units'),
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Quantity field
               TextFormField(
                 controller: _quantityController,
                 keyboardType: TextInputType.number,
@@ -79,19 +85,11 @@ class _StockOutScreenState extends State<StockOutScreen> {
                   labelText: 'Quantity to Issue',
                   prefixIcon: Icon(Icons.remove_circle_outline),
                 ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Enter quantity';
-                  final qty = int.tryParse(v);
-                  if (qty == null || qty <= 0) return 'Enter a valid quantity';
-                  if (qty > widget.product.quantity) {
-                    return 'Cannot issue more than current stock (${widget.product.quantity})';
-                  }
-                  return null;
-                },
+                validator: (v) =>
+                    Validators.notExceedStock(v, widget.product.quantity),
               ),
               const SizedBox(height: 14),
 
-              // Note field
               TextFormField(
                 controller: _noteController,
                 decoration: const InputDecoration(
@@ -105,9 +103,12 @@ class _StockOutScreenState extends State<StockOutScreen> {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(backgroundColor: AppTheme.danger),
-                  icon: const Icon(Icons.arrow_upward),
-                  label: const Text('Confirm Stock Out'),
-                  onPressed: _submit,
+                  icon: _isSaving
+                      ? const SizedBox(width: 18, height: 18,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.arrow_upward, color: Colors.white),
+                  label: const Text('Confirm Stock Out', style: TextStyle(color: Colors.white)),
+                  onPressed: _isSaving ? null : _submit,
                 ),
               ),
             ],
