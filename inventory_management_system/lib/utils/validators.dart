@@ -1,11 +1,9 @@
 class Validators {
-  /// Must not be empty
   static String? required(String? value, [String fieldName = 'This field']) {
     if (value == null || value.trim().isEmpty) return '$fieldName is required';
     return null;
   }
 
-  /// Must be a positive whole number
   static String? positiveInt(String? value) {
     if (value == null || value.trim().isEmpty) return 'Enter a number';
     final n = int.tryParse(value.trim());
@@ -14,7 +12,6 @@ class Validators {
     return null;
   }
 
-  /// Must be a positive decimal number
   static String? positiveDouble(String? value) {
     if (value == null || value.trim().isEmpty) return 'Enter a price';
     final n = double.tryParse(value.trim());
@@ -23,7 +20,6 @@ class Validators {
     return null;
   }
 
-  /// Must not exceed available stock
   static String? notExceedStock(String? value, int available) {
     final baseCheck = positiveInt(value);
     if (baseCheck != null) return baseCheck;

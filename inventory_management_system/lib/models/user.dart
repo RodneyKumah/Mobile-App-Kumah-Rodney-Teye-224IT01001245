@@ -1,13 +1,9 @@
 class User {
   final int? id;
   final String username;
-  final String password; // stored as plain text for now (hash in a future level)
+  final String password;
 
-  User({
-    this.id,
-    required this.username,
-    required this.password,
-  });
+  User({this.id, required this.username, required this.password});
 
   Map<String, dynamic> toMap() => {
         'id': id,

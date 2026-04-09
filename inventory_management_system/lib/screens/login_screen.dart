@@ -24,19 +24,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() { _isLoading = true; _errorMessage = null; });
 
-    final user = await DatabaseHelper.instance.login(
-      _usernameController.text,
-      _passwordController.text,
-    );
+    final user = await DatabaseHelper.instance
+        .login(_usernameController.text, _passwordController.text);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (user != null) {
       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ProductListScreen()),
-      );
+          context, MaterialPageRoute(builder: (_) => const ProductListScreen()));
     } else {
       setState(() => _errorMessage = 'Incorrect username or password.');
     }
@@ -66,13 +62,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.inventory_2_outlined, size: 64, color: AppTheme.primary),
+                    const Icon(Icons.inventory_2_outlined,
+                        size: 64, color: AppTheme.primary),
                     const SizedBox(height: 8),
                     const Text(AppConstants.appName,
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 28),
 
-                    // Error banner
                     if (_errorMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.all(10),
@@ -81,30 +77,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.red.shade200),
                         ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(_errorMessage!,
-                                style: const TextStyle(color: AppTheme.danger))),
-                          ],
-                        ),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline,
+                              color: AppTheme.danger, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(_errorMessage!,
+                                  style: const TextStyle(color: AppTheme.danger))),
+                        ]),
                       ),
                       const SizedBox(height: 16),
                     ],
 
-                    // Username
                     TextFormField(
                       controller: _usernameController,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
+                          labelText: 'Username',
+                          prefixIcon: Icon(Icons.person_outline)),
                       validator: (v) => Validators.required(v, 'Username'),
                     ),
                     const SizedBox(height: 16),
 
-                    // Password
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
@@ -112,36 +105,36 @@ class _LoginScreenState extends State<LoginScreen> {
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () =>
-                              setState(() => _obscurePassword = !_obscurePassword),
+                          icon: Icon(_obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility),
+                          onPressed: () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                       validator: (v) => Validators.required(v, 'Password'),
                     ),
                     const SizedBox(height: 24),
 
-                    // Login button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleLogin,
                         child: _isLoading
                             ? const SizedBox(
-                                height: 20,
-                                width: 20,
+                                height: 20, width: 20,
                                 child: CircularProgressIndicator(
                                     color: Colors.white, strokeWidth: 2))
                             : const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 4),
-                                child: Text('Login', style: TextStyle(fontSize: 16)),
-                              ),
+                                child: Text('Login',
+                                    style: TextStyle(fontSize: 16))),
                       ),
                     ),
-
                     const SizedBox(height: 12),
                     Text('Default: admin / admin123',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                        style: TextStyle(
+                            fontSize: 11, color: Colors.grey.shade500)),
                   ],
                 ),
               ),

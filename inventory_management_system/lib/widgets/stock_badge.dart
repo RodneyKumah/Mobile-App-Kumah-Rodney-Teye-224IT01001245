@@ -7,18 +7,18 @@ class StockBadge extends StatelessWidget {
 
   const StockBadge({super.key, required this.quantity});
 
-  bool get _isLow => quantity < AppConstants.lowStockThreshold;
   bool get _isEmpty => quantity == 0;
+  bool get _isLow   => quantity > 0 && quantity < AppConstants.lowStockThreshold;
 
   Color get _bgColor {
     if (_isEmpty) return Colors.red.shade200;
-    if (_isLow) return Colors.orange.shade100;
+    if (_isLow)   return Colors.orange.shade100;
     return Colors.green.shade100;
   }
 
   Color get _textColor {
     if (_isEmpty) return AppTheme.danger;
-    if (_isLow) return Colors.orange.shade800;
+    if (_isLow)   return AppTheme.warning;
     return AppTheme.success;
   }
 
@@ -35,14 +35,9 @@ class StockBadge extends StatelessWidget {
         color: _bgColor,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        _label,
-        style: TextStyle(
-          color: _textColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
-      ),
+      child: Text(_label,
+          style: TextStyle(
+              color: _textColor, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 }

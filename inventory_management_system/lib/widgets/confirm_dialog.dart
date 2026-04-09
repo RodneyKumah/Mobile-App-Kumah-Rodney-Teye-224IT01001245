@@ -14,7 +14,6 @@ class ConfirmDialog extends StatelessWidget {
     this.confirmColor = Colors.red,
   });
 
-  /// Shows the dialog and returns true if the user confirmed, false otherwise.
   static Future<bool> show(
     BuildContext context, {
     required String title,
@@ -47,7 +46,8 @@ class ConfirmDialog extends StatelessWidget {
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: confirmColor),
           onPressed: () => Navigator.pop(context, true),
-          child: Text(confirmLabel, style: const TextStyle(color: Colors.white)),
+          child:
+              Text(confirmLabel, style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

@@ -55,27 +55,25 @@ class DatabaseHelper {
       )
     ''');
 
-    // Seed default admin user
+    // Seed default admin
     await db.insert('users', {
       'username': AppConstants.defaultUsername,
       'password': AppConstants.defaultPassword,
     });
   }
 
-  //  Auth 
+  // ── Auth ──────────────────────────────────────────────────────
 
   Future<User?> login(String username, String password) async {
     final db = await database;
-    final maps = await db.query(
-      'users',
-      where: 'username = ? AND password = ?',
-      whereArgs: [username.trim(), password.trim()],
-    );
+    final maps = await db.query('users',
+        where: 'username = ? AND password = ?',
+        whereArgs: [username.trim(), password.trim()]);
     if (maps.isEmpty) return null;
     return User.fromMap(maps.first);
   }
 
-  // Product CRUD 
+  // ── Products ──────────────────────────────────────────────────
 
   Future<int> insertProduct(Product product) async {
     final db = await database;
@@ -86,6 +84,41 @@ class DatabaseHelper {
     final db = await database;
     final maps = await db.query('products', orderBy: 'name ASC');
     return maps.map((m) => Product.fromMap(m)).toList();
+  }
+
+  /// Search products by name or code, optionally filtered by category.
+  Future<List<Product>> searchProducts({
+    String query = '',
+    String category = 'All',
+  }) async {
+    final db = await database;
+    String where = '';
+    List<dynamic> args = [];
+
+    if (query.isNotEmpty && category != 'All') {
+      where = '(name LIKE ? OR code LIKE ?) AND category = ?';
+      args = ['%$query%', '%$query%', category];
+    } else if (query.isNotEmpty) {
+      where = 'name LIKE ? OR code LIKE ?';
+      args = ['%$query%', '%$query%'];
+    } else if (category != 'All') {
+      where = 'category = ?';
+      args = [category];
+    }
+
+    final maps = await db.query('products',
+        where: where.isEmpty ? null : where,
+        whereArgs: args.isEmpty ? null : args,
+        orderBy: 'name ASC');
+    return maps.map((m) => Product.fromMap(m)).toList();
+  }
+
+  /// Returns a sorted list of all distinct category names.
+  Future<List<String>> getCategories() async {
+    final db = await database;
+    final maps = await db.rawQuery(
+        'SELECT DISTINCT category FROM products ORDER BY category ASC');
+    return maps.map((m) => m['category'] as String).toList();
   }
 
   Future<int> updateProduct(Product product) async {
@@ -99,11 +132,10 @@ class DatabaseHelper {
     return await db.delete('products', where: 'id = ?', whereArgs: [id]);
   }
 
-  //  Stock Logic
+  // ── Stock Movements ───────────────────────────────────────────
 
   Future<void> recordStockIn(int productId, int quantity, String note) async {
     final db = await database;
-    // New Quantity = Current Quantity + Added Quantity
     await db.rawUpdate(
         'UPDATE products SET quantity = quantity + ? WHERE id = ?',
         [quantity, productId]);
@@ -125,7 +157,6 @@ class DatabaseHelper {
     if (result.isEmpty) return false;
     final current = result.first['quantity'] as int;
     if (current < quantity) return false;
-    // New Quantity = Current Quantity - Issued Quantity
     await db.rawUpdate(
         'UPDATE products SET quantity = quantity - ? WHERE id = ?',
         [quantity, productId]);
@@ -141,6 +172,7 @@ class DatabaseHelper {
     return true;
   }
 
+  /// All transactions for a single product, newest first.
   Future<List<StockTransaction>> getTransactionsForProduct(int productId) async {
     final db = await database;
     final maps = await db.query('stock_transactions',
@@ -148,6 +180,37 @@ class DatabaseHelper {
         whereArgs: [productId],
         orderBy: 'date DESC');
     return maps.map((m) => StockTransaction.fromMap(m)).toList();
+  }
+
+  /// All transactions across all products, newest first.
+  Future<List<StockTransaction>> getAllTransactions() async {
+    final db = await database;
+    final maps = await db.query('stock_transactions', orderBy: 'date DESC');
+    return maps.map((m) => StockTransaction.fromMap(m)).toList();
+  }
+
+  /// Summary stats: totals by category.
+  Future<List<Map<String, dynamic>>> getCategorySummary() async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT
+        category,
+        COUNT(*) AS product_count,
+        SUM(quantity) AS total_units,
+        SUM(quantity * unit_price) AS total_value
+      FROM products
+      GROUP BY category
+      ORDER BY category ASC
+    ''');
+  }
+
+  /// Count of today's transactions.
+  Future<int> getTodayTransactionCount(String todayPrefix) async {
+    final db = await database;
+    final result = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM stock_transactions WHERE date LIKE ?',
+        ['$todayPrefix%']);
+    return result.first['cnt'] as int;
   }
 
   Future<void> close() async {
