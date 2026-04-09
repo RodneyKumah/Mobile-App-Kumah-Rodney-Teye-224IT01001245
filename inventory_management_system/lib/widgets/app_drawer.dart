@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import '../screens/dashboard_screen.dart';
 import '../screens/product_list_screen.dart';
 import '../screens/summary_screen.dart';
 import '../screens/all_transactions_screen.dart';
+import '../screens/settings_screen.dart';
+import '../screens/manage_users_screen.dart';
 import '../screens/login_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   final String currentRoute;
+  final String username;
 
-  const AppDrawer({super.key, required this.currentRoute});
+  const AppDrawer({
+    super.key,
+    required this.currentRoute,
+    this.username = 'admin',
+  });
 
   void _go(BuildContext context, Widget screen) {
-    Navigator.pop(context); // close drawer
+    Navigator.pop(context);
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => screen),
@@ -25,6 +33,7 @@ class AppDrawer extends StatelessWidget {
     return Drawer(
       child: Column(
         children: [
+          // ── Header ────────────────────────────────────────────
           DrawerHeader(
             decoration: const BoxDecoration(color: AppTheme.primary),
             child: Row(
@@ -41,14 +50,27 @@ class AppDrawer extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold)),
-                    const Text('Manage your stock',
-                        style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      const Icon(Icons.person, color: Colors.white70, size: 14),
+                      const SizedBox(width: 4),
+                      Text(username,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12)),
+                    ]),
                   ],
                 ),
               ],
             ),
           ),
 
+          // ── Nav items ─────────────────────────────────────────
+          _Item(
+            icon: Icons.dashboard_outlined,
+            label: 'Dashboard',
+            isSelected: currentRoute == 'dashboard',
+            onTap: () => _go(context, DashboardScreen(username: username)),
+          ),
           _Item(
             icon: Icons.list_alt,
             label: 'Products',
@@ -69,8 +91,25 @@ class AppDrawer extends StatelessWidget {
           ),
 
           const Divider(),
-          const Spacer(),
 
+          _Item(
+            icon: Icons.people_outline,
+            label: 'Manage Users',
+            isSelected: currentRoute == 'users',
+            onTap: () => _go(context,
+                ManageUsersScreen(currentUsername: username)),
+          ),
+          _Item(
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            isSelected: currentRoute == 'settings',
+            onTap: () => _go(context, SettingsScreen(username: username)),
+          ),
+
+          const Spacer(),
+          const Divider(),
+
+          // ── Logout ────────────────────────────────────────────
           _Item(
             icon: Icons.logout,
             label: 'Logout',

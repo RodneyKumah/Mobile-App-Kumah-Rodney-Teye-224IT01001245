@@ -3,7 +3,7 @@ import '../database/database_helper.dart';
 import '../utils/app_theme.dart';
 import '../utils/validators.dart';
 import '../utils/constants.dart';
-import 'product_list_screen.dart';
+import 'dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -31,8 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (user != null) {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (_) => const ProductListScreen()));
+      Navigator.pushReplacement(context,
+        MaterialPageRoute(builder: (_) => DashboardScreen(username: user.username)));
     } else {
       setState(() => _errorMessage = 'Incorrect username or password.');
     }
@@ -62,8 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.inventory_2_outlined,
-                        size: 64, color: AppTheme.primary),
+                    const Icon(Icons.inventory_2_outlined, size: 64, color: AppTheme.primary),
                     const SizedBox(height: 8),
                     const Text(AppConstants.appName,
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
@@ -78,12 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           border: Border.all(color: Colors.red.shade200),
                         ),
                         child: Row(children: [
-                          const Icon(Icons.error_outline,
-                              color: AppTheme.danger, size: 18),
+                          const Icon(Icons.error_outline, color: AppTheme.danger, size: 18),
                           const SizedBox(width: 8),
-                          Expanded(
-                              child: Text(_errorMessage!,
-                                  style: const TextStyle(color: AppTheme.danger))),
+                          Expanded(child: Text(_errorMessage!,
+                              style: const TextStyle(color: AppTheme.danger))),
                         ]),
                       ),
                       const SizedBox(height: 16),
@@ -106,10 +103,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(_obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
-                          onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
+                              ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () =>
+                              setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                       validator: (v) => Validators.required(v, 'Password'),
@@ -121,20 +117,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _handleLogin,
                         child: _isLoading
-                            ? const SizedBox(
-                                height: 20, width: 20,
+                            ? const SizedBox(height: 20, width: 20,
                                 child: CircularProgressIndicator(
                                     color: Colors.white, strokeWidth: 2))
                             : const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 4),
-                                child: Text('Login',
-                                    style: TextStyle(fontSize: 16))),
+                                child: Text('Login', style: TextStyle(fontSize: 16))),
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text('Default: admin / admin123',
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500)),
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                   ],
                 ),
               ),

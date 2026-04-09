@@ -4,6 +4,7 @@ import '../models/product.dart';
 import '../models/stock_transaction.dart';
 import '../models/user.dart';
 import '../utils/constants.dart';
+import '../utils/date_helper.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -218,3 +219,81 @@ class DatabaseHelper {
     db.close();
   }
 }
+
+  // ── User Management ───────────────────────────────────────────
+
+  Future<List<User>> getAllUsers() async {
+    final db = await database;
+    final maps = await db.query('users', orderBy: 'username ASC');
+    return maps.map((m) => User.fromMap(m)).toList();
+  }
+
+  Future<bool> addUser(String username, String password) async {
+    try {
+      final db = await database;
+      await db.insert('users', {'username': username.trim(), 'password': password.trim()});
+      return true;
+    } catch (_) {
+      return false; // username already exists
+    }
+  }
+
+  Future<bool> changePassword(String username, String oldPassword, String newPassword) async {
+    final db = await database;
+    final match = await login(username, oldPassword);
+    if (match == null) return false;
+    await db.update(
+      'users',
+      {'password': newPassword.trim()},
+      where: 'username = ?',
+      whereArgs: [username.trim()],
+    );
+    return true;
+  }
+
+  Future<int> deleteUser(int id) async {
+    final db = await database;
+    return await db.delete('users', where: 'id = ?', whereArgs: [id]);
+  }
+
+  /// Most recent [limit] transactions across all products.
+  Future<List<StockTransaction>> getRecentTransactions(int limit) async {
+    final db = await database;
+    final maps = await db.query('stock_transactions',
+        orderBy: 'date DESC', limit: limit);
+    return maps.map((m) => StockTransaction.fromMap(m)).toList();
+  }
+
+  /// Total products, units, value, low stock count — for the dashboard.
+  Future<Map<String, dynamic>> getDashboardStats() async {
+    final db = await database;
+
+    final productRows = await db.rawQuery('''
+      SELECT
+        COUNT(*) AS total_products,
+        SUM(quantity) AS total_units,
+        SUM(quantity * unit_price) AS total_value
+      FROM products
+    ''');
+
+    final lowStock = await db.rawQuery(
+        'SELECT COUNT(*) AS cnt FROM products WHERE quantity > 0 AND quantity < ?',
+        [AppConstants.lowStockThreshold]);
+
+    final outOfStock = await db.rawQuery(
+        'SELECT COUNT(*) AS cnt FROM products WHERE quantity = 0');
+
+    final todayTx = await db.rawQuery(
+        'SELECT COUNT(*) AS cnt FROM stock_transactions WHERE date LIKE ?',
+        ['${DateHelper.todayPrefix()}%']);
+
+    final row = productRows.first;
+    return {
+      'total_products': row['total_products'] ?? 0,
+      'total_units':    row['total_units']    ?? 0,
+      'total_value':    row['total_value']    ?? 0.0,
+      'low_stock':      (lowStock.first['cnt'] as int?) ?? 0,
+      'out_of_stock':   (outOfStock.first['cnt'] as int?) ?? 0,
+      'today_tx':       (todayTx.first['cnt'] as int?) ?? 0,
+    };
+  }
