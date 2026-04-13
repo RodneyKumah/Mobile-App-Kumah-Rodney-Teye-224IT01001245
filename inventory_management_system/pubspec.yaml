@@ -8,9 +8,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  sqflite: ^2.3.0
-  path: ^1.8.3
+
+  # Firebase
+  firebase_core: ^2.30.0
+  firebase_auth: ^4.17.0
+  cloud_firestore: ^4.15.0
+  fl_chart: ^0.68.0
+  mobile_scanner: ^5.2.3
+
+  # Optional useful packages
   intl: ^0.19.0
+  cupertino_icons: ^1.0.8
 
 dev_dependencies:
   flutter_test:
